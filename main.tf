@@ -43,6 +43,8 @@ resource "google_compute_instance" "vm_instance" {
      #!/bin/bash
      sudo apt-get update 
      sudo apt-get install -y google-osconfig-agent
+     sudo systemctl enable google-osconfig-agent
+     sudo systemctl start google-osconfig-agent
    EOF
   depends_on              = [time_sleep.wait_project_init]
 }
@@ -55,6 +57,11 @@ resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent
 
   instance_filter {
     all = false
+    inclusion_labels {
+      labels = {
+        env = "production"
+      }
+    }
     inventories {
       os_short_name = "ubuntu"
       os_version    = "22.04"
