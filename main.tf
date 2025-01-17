@@ -28,17 +28,27 @@ resource "google_compute_instance" "vm_instance" {
 
 resource "google_os_config_os_policy_assignment" "apache_install" {
   name        = "apache-install"
+  project     = var.project_id
   description = "Install Apache on existing VM"
+  location    = "us-central1-a"
+
+  instance_filter {
+    all = false
+    inclusion_labels {
+      labels = {
+        env = "production"
+      }
+    }
+    inventories {
+      os_short_name = "debian"
+    }
+  }
   os_policies {
     id   = "install-apache"
     mode = "ENFORCEMENT"
     resource_groups {
-      os_filter {
-        os_short_name = "debian"
-        os_version    = "10"
-      }
       resources {
-        id = "exec"
+        id = "install-apache-pkg"
         pkg {
           desired_state = "INSTALLED"
           name          = "apache2"
@@ -47,13 +57,6 @@ resource "google_os_config_os_policy_assignment" "apache_install" {
     }
   }
 
-  location = "us-central1-a"
-
-  instance_filter {
-    inclusion_labels = {
-      "env" = "production"
-    }
-  }
   rollout {
     disruption_budget {
       fixed = 1
