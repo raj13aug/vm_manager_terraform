@@ -63,8 +63,8 @@ resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent
 
   os_policies {
     allow_no_resource_group_match = false
-    description                   = "Copy file from GCS bucket to local path"
-    id                            = "install-and-configure-ops-agent"
+    description                   = "install and confiure apache"
+    id                            = "install-apache"
     mode                          = "ENFORCEMENT"
 
     resource_groups {
