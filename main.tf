@@ -26,50 +26,11 @@ resource "google_compute_instance" "vm_instance" {
 
 }
 
-# resource "google_os_config_os_policy_assignment" "apache_install" {
-#   name        = "apache-install"
-#   project     = var.project_id
-#   description = "Install Apache on existing VM"
-#   location    = "us-central1-a"
-
-#   instance_filter {
-#     all = false
-#     inclusion_labels {
-#       labels = {
-#         env = "production"
-#       }
-#     }
-#     inventories {
-#       os_short_name = "debian"
-#     }
-#   }
-#   os_policies {
-#     id   = "install-apache"
-#     mode = "ENFORCEMENT"
-#     resource_groups {
-#       resources {
-#         id = "install-apache-pkg"
-#         pkg {
-#           desired_state = "INSTALLED"
-#           name          = "apache2"
-#         }
-#       }
-#     }
-#   }
-
-#   rollout {
-#     disruption_budget {
-#       fixed = 1
-#     }
-#     min_wait_duration = "60s"
-#   }
-# }
-
 resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
   description = "Install the ops agent on hosts"
   location    = var.zone
   name        = "install-google-cloud-ops-agent"
-  project     = var.project
+  project     = var.project_id
 
   instance_filter {
     all = false
@@ -97,7 +58,13 @@ resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent
           validate {
             args        = []
             interpreter = "SHELL"
-            script      = "if systemctl is-active google-cloud-ops-agent-opentelemetry-collector; then exit 100; else exit 101; fi"
+            script      = <<EOT
+             if dpkg -l | grep -q apache2; then
+              exit 0
+            else
+              exit 1
+            fi
+            EOT
           }
         }
       }
