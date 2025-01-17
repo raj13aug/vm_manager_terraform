@@ -1,3 +1,19 @@
+resource "google_project_service" "osconfig" {
+  project = var.project_id
+  service = "osconfig.googleapis.com"
+}
+
+resource "google_project_service" "compute" {
+  project = var.project_id
+  service = "compute.googleapis.com"
+}
+
+resource "time_sleep" "wait_project_init" {
+  create_duration = "90s"
+
+  depends_on = [google_project_service.osconfig, google_project_service.compute]
+}
+
 resource "google_compute_instance" "vm_instance" {
   name         = "cloudroot7"
   machine_type = "e2-medium"
@@ -23,7 +39,7 @@ resource "google_compute_instance" "vm_instance" {
      sudo apt-get update 
      sudo apt-get install -y google-osconfig-agent
    EOF
-
+  depends_on              = [time_sleep.wait_project_init]
 }
 
 resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
