@@ -8,10 +8,15 @@ resource "google_project_service" "compute" {
   service = "compute.googleapis.com"
 }
 
+resource "google_project_service" "manger" {
+  project = var.project_id
+  service = "cloudresourcemanager.googleapis.com"
+}
+
 resource "time_sleep" "wait_project_init" {
   create_duration = "90s"
 
-  depends_on = [google_project_service.osconfig, google_project_service.compute]
+  depends_on = [google_project_service.osconfig, google_project_service.compute, google_project_service.manger]
 }
 
 resource "google_compute_instance" "vm_instance" {
@@ -21,7 +26,7 @@ resource "google_compute_instance" "vm_instance" {
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-10"
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }
 
@@ -96,4 +101,5 @@ resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent
   }
 
   timeouts {}
+  depends_on = [time_sleep.wait_project_init]
 }

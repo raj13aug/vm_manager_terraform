@@ -1,7 +1,7 @@
 variable "project_id" {
   type        = string
   description = "project id"
-  default     = "testing-last-446414"
+  default     = "api-terraform-403712"
 }
 
 variable "region" {
