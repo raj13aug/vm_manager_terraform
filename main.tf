@@ -19,6 +19,13 @@ resource "time_sleep" "wait_project_init" {
   depends_on = [google_project_service.osconfig, google_project_service.compute, google_project_service.manger]
 }
 
+resource "google_compute_project_metadata_item" "osconfig" {
+  project = var.project_id
+  key     = "enable-osconfig"
+  value   = "true"
+}
+
+
 resource "google_compute_instance" "vm_instance" {
   name         = "cloudroot7"
   machine_type = "e2-medium"
