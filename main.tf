@@ -41,16 +41,16 @@ resource "google_os_config_os_policy_assignment" "apache_install" {
         id = "exec"
         pkg {
           desired_state = "INSTALLED"
-          name = "apache2"
-       }
+          name          = "apache2"
+        }
       }
     }
-  } 
-     
+  }
+
   location = "us-central1-a"
 
   instance_filter {
-    inclusion_labels {
+    inclusion_labels = {
       "env" = "production"
     }
   }
