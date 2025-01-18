@@ -67,28 +67,28 @@ resource "google_compute_instance" "vm_instance" {
 }
 
 
-data "google_compute_default_service_account" "default" {
-  project = var.project_id
-}
+# data "google_compute_default_service_account" "default" {
+#   project = var.project_id
+# }
 
 
-resource "google_project_iam_member" "osconfig" {
-  project = var.project_id
-  role    = "roles/osconfig.guestPolicyAdmin"
-  member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-}
+# resource "google_project_iam_member" "osconfig" {
+#   project = var.project_id
+#   role    = "roles/osconfig.guestPolicyAdmin"
+#   member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
+# }
 
-resource "google_project_iam_member" "compute_instance_admin" {
-  project = var.project_id
-  role    = "roles/compute.instanceAdmin.v1"
-  member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-}
+# resource "google_project_iam_member" "compute_instance_admin" {
+#   project = var.project_id
+#   role    = "roles/compute.instanceAdmin.v1"
+#   member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
+# }
 
-resource "google_project_iam_member" "iam_service_account_user" {
-  project = var.project_id
-  role    = "roles/iam.serviceAccountUser"
-  member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-}
+# resource "google_project_iam_member" "iam_service_account_user" {
+#   project = var.project_id
+#   role    = "roles/iam.serviceAccountUser"
+#   member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
+# }
 
 
 # resource "google_compute_instance_iam_member" "vm_instance_admin" {
