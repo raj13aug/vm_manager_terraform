@@ -75,7 +75,7 @@ resource "google_compute_instance_iam_member" "vm_instance_admin" {
   project       = var.project_id
   zone          = var.zone
   instance_name = google_compute_instance.vm_instance.name
-  role          = "role/compute.instanceAdmin.v1"
+  role          = "roles/compute.instanceAdmin.v1"
   member        = "serviceAccount:${data.google_compute_default_service_account.default.email}"
 }
 
