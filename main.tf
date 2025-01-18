@@ -97,64 +97,96 @@ resource "google_compute_instance" "vm_instance" {
 }
 
 
-resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
-  description = "Install the ops agent on hosts"
+resource "google_os_config_os_policy_assignment" "os_policy_assignment" {
+  name        = "apache-os-policy-assignment"
   location    = var.zone
-  name        = "install-google-cloud-ops-agent"
-  project     = var.project_id
-
-  instance_filter {
-    all = false
-    inclusion_labels {
-      labels = {
-        env = "production"
-      }
+  description = "OS policy assignment to install Apache on Ubuntu"
+  rollout {
+    disruption_budget {
+      fixed = 1
     }
-    inventories {
-      os_short_name = "ubuntu"
-      os_version    = "22.04"
-    }
+    min_wait_duration = "60s"
   }
-
+  instance_filter {
+    all = true
+  }
   os_policies {
-    allow_no_resource_group_match = false
-    description                   = "install and confiure apache"
-    id                            = "install-apache"
-    mode                          = "ENFORCEMENT"
-
+    id          = "apache-policy"
+    mode        = "ENFORCEMENT"
+    description = "Policy to install Apache on Ubuntu"
     resource_groups {
       resources {
         id = "install-package"
-        exec {
-          enforce {
-            args        = []
-            interpreter = "SHELL"
-            script      = "apt-get install -y apache2 && exit 100"
-          }
-          validate {
-            args        = []
-            interpreter = "SHELL"
-            script      = <<EOT
-             if dpkg -l | grep -q apache2; then
-              exit 0
-            else
-              exit 1
-            fi
-            EOT
+        pkg {
+          desired_state = "INSTALLED"
+          apt {
+            name = "apache2"
           }
         }
       }
     }
   }
-
-  rollout {
-    min_wait_duration = "60s"
-    disruption_budget {
-      fixed   = 0
-      percent = 100
-    }
-  }
-
-  timeouts {}
-  depends_on = [time_sleep.wait_project_init]
 }
+
+
+# resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
+#   description = "Install the ops agent on hosts"
+#   location    = var.zone
+#   name        = "install-google-cloud-ops-agent"
+#   project     = var.project_id
+
+#   instance_filter {
+#     all = false
+#     inclusion_labels {
+#       labels = {
+#         env = "production"
+#       }
+#     }
+#     inventories {
+#       os_short_name = "ubuntu"
+#       os_version    = "22.04"
+#     }
+#   }
+
+#   os_policies {
+#     allow_no_resource_group_match = false
+#     description                   = "install and confiure apache"
+#     id                            = "install-apache"
+#     mode                          = "ENFORCEMENT"
+
+#     resource_groups {
+#       resources {
+#         id = "install-package"
+#         exec {
+#           enforce {
+#             args        = []
+#             interpreter = "SHELL"
+#             script      = "apt-get install -y apache2 && exit 100"
+#           }
+#           validate {
+#             args        = []
+#             interpreter = "SHELL"
+#             script      = <<EOT
+#              if dpkg -l | grep -q apache2; then
+#               exit 0
+#             else
+#               exit 1
+#             fi
+#             EOT
+#           }
+#         }
+#       }
+#     }
+#   }
+
+#   rollout {
+#     min_wait_duration = "60s"
+#     disruption_budget {
+#       fixed   = 0
+#       percent = 100
+#     }
+#   }
+
+#   timeouts {}
+#   depends_on = [time_sleep.wait_project_init]
+# }
