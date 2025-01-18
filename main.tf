@@ -27,13 +27,13 @@ resource "time_sleep" "wait_project_init" {
 resource "google_compute_project_metadata_item" "osconfig" {
   project = var.project_id
   key     = "enable-osconfig"
-  value   = "true"
+  value   = "TRUE"
 }
 
 resource "google_compute_project_metadata_item" "enable_osconfig" {
   project = var.project_id
   key     = "enable-guest-attributes"
-  value   = "true"
+  value   = "TRUE"
 }
 
 resource "google_compute_instance" "vm_instance" {
