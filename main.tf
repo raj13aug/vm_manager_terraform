@@ -25,10 +25,15 @@ resource "google_compute_project_metadata_item" "osconfig" {
   value   = "true"
 }
 
+resource "google_compute_project_metadata_item" "enable_osconfig" {
+  project = var.project_id
+  key     = "enable-guest-attributes"
+  value   = "true"
+}
 
 resource "google_compute_instance" "vm_instance" {
   name         = "cloudroot7"
-  machine_type = "e2-medium"
+  machine_type = "e2-micro"
   zone         = var.zone
 
   boot_disk {
