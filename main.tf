@@ -61,6 +61,20 @@ resource "google_compute_instance" "vm_instance" {
   depends_on              = [time_sleep.wait_project_init]
 }
 
+
+data "goole_compute_default_service_account" "default" {
+  provider = var.project_id
+}
+
+resource "google_compute_instance_iam_member" "vm_instance_admin" {
+  project       = var.project_id
+  zone          = var.zone
+  instance_name = google_compute_instance.vm_instance.name
+  role          = "role/compute.instabceAdmin.v1"
+  member        = "serviceAccount:${data.goole_compute_default_service_account.default.email}"
+}
+
+
 resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
   description = "Install the ops agent on hosts"
   location    = var.zone
