@@ -13,10 +13,15 @@ resource "google_project_service" "manger" {
   service = "cloudresourcemanager.googleapis.com"
 }
 
+resource "google_project_service" "iam" {
+  project = var.project_id
+  service = "iam.googleapis.com"
+}
+
 resource "time_sleep" "wait_project_init" {
   create_duration = "90s"
 
-  depends_on = [google_project_service.osconfig, google_project_service.compute, google_project_service.manger]
+  depends_on = [google_project_service.osconfig, google_project_service.compute, google_project_service.manger, google_project_service.iam]
 }
 
 resource "google_compute_project_metadata_item" "osconfig" {
@@ -62,8 +67,8 @@ resource "google_compute_instance" "vm_instance" {
 }
 
 
-data "goole_compute_default_service_account" "default" {
-  provider = var.project_id
+data "google_compute_default_service_account" "default" {
+  project = var.project_id
 }
 
 resource "google_compute_instance_iam_member" "vm_instance_admin" {
@@ -71,7 +76,7 @@ resource "google_compute_instance_iam_member" "vm_instance_admin" {
   zone          = var.zone
   instance_name = google_compute_instance.vm_instance.name
   role          = "role/compute.instabceAdmin.v1"
-  member        = "serviceAccount:${data.goole_compute_default_service_account.default.email}"
+  member        = "serviceAccount:${data.google_compute_default_service_account.default.email}"
 }
 
 
