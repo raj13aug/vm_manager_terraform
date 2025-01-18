@@ -36,10 +36,35 @@ resource "google_compute_project_metadata_item" "enable_osconfig" {
   value   = "TRUE"
 }
 
+data "google_compute_default_service_account" "default" {
+  project = var.project_id
+}
+
+
+resource "google_project_iam_member" "osconfig_agent_role" {
+  project = var.project_id
+  role    = "roles/osconfig.guestPolicyAdmin"
+  member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
+}
+
+resource "google_project_iam_member" "compute_instance_admin_role" {
+  project = var.project_id
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
+}
+
+
 resource "google_compute_instance" "vm_instance" {
   name         = "cloudroot7"
   machine_type = "e2-micro"
   zone         = var.zone
+
+  allow_stopping_for_update = true
+
+  metadata = {
+    enable-guest-attributes = "TRUE"
+    enable-osconfig         = "TRUE"
+  }
 
   boot_disk {
     initialize_params {
@@ -56,6 +81,11 @@ resource "google_compute_instance" "vm_instance" {
     env = "production"
   }
 
+  service_account {
+    email  = data.google_compute_default_service_account.default.email
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
+
   metadata_startup_script = <<-EOF
      #!/bin/bash
      sudo apt-get update 
@@ -67,97 +97,64 @@ resource "google_compute_instance" "vm_instance" {
 }
 
 
-# data "google_compute_default_service_account" "default" {
-#   project = var.project_id
-# }
+resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
+  description = "Install the ops agent on hosts"
+  location    = var.zone
+  name        = "install-google-cloud-ops-agent"
+  project     = var.project_id
 
+  instance_filter {
+    all = false
+    inclusion_labels {
+      labels = {
+        env = "production"
+      }
+    }
+    inventories {
+      os_short_name = "ubuntu"
+      os_version    = "22.04"
+    }
+  }
 
-# resource "google_project_iam_member" "osconfig" {
-#   project = var.project_id
-#   role    = "roles/osconfig.guestPolicyAdmin"
-#   member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-# }
+  os_policies {
+    allow_no_resource_group_match = false
+    description                   = "install and confiure apache"
+    id                            = "install-apache"
+    mode                          = "ENFORCEMENT"
 
-# resource "google_project_iam_member" "compute_instance_admin" {
-#   project = var.project_id
-#   role    = "roles/compute.instanceAdmin.v1"
-#   member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-# }
+    resource_groups {
+      resources {
+        id = "install-package"
+        exec {
+          enforce {
+            args        = []
+            interpreter = "SHELL"
+            script      = "apt-get install -y apache2 && exit 100"
+          }
+          validate {
+            args        = []
+            interpreter = "SHELL"
+            script      = <<EOT
+             if dpkg -l | grep -q apache2; then
+              exit 0
+            else
+              exit 1
+            fi
+            EOT
+          }
+        }
+      }
+    }
+  }
 
-# resource "google_project_iam_member" "iam_service_account_user" {
-#   project = var.project_id
-#   role    = "roles/iam.serviceAccountUser"
-#   member  = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-# }
+  rollout {
+    min_wait_duration = "60s"
+    disruption_budget {
+      fixed   = 0
+      percent = 100
+    }
+  }
 
-
-# resource "google_compute_instance_iam_member" "vm_instance_admin" {
-#   project       = var.project_id
-#   zone          = var.zone
-#   instance_name = google_compute_instance.vm_instance.name
-#   role          = "roles/compute.instanceAdmin.v1"
-#   member        = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-# }
-
-
-# resource "google_os_config_os_policy_assignment" "install-google-cloud-ops-agent" {
-#   description = "Install the ops agent on hosts"
-#   location    = var.zone
-#   name        = "install-google-cloud-ops-agent"
-#   project     = var.project_id
-
-#   instance_filter {
-#     all = false
-#     inclusion_labels {
-#       labels = {
-#         env = "production"
-#       }
-#     }
-#     inventories {
-#       os_short_name = "ubuntu"
-#       os_version    = "22.04"
-#     }
-#   }
-
-#   os_policies {
-#     allow_no_resource_group_match = false
-#     description                   = "install and confiure apache"
-#     id                            = "install-apache"
-#     mode                          = "ENFORCEMENT"
-
-#     resource_groups {
-#       resources {
-#         id = "install-package"
-#         exec {
-#           enforce {
-#             args        = []
-#             interpreter = "SHELL"
-#             script      = "apt-get install -y apache2 && exit 100"
-#           }
-#           validate {
-#             args        = []
-#             interpreter = "SHELL"
-#             script      = <<EOT
-#              if dpkg -l | grep -q apache2; then
-#               exit 0
-#             else
-#               exit 1
-#             fi
-#             EOT
-#           }
-#         }
-#       }
-#     }
-#   }
-
-#   rollout {
-#     min_wait_duration = "60s"
-#     disruption_budget {
-#       fixed   = 0
-#       percent = 100
-#     }
-#   }
-
-#   timeouts {}
-#   depends_on = [time_sleep.wait_project_init]
-# }
+  timeouts {}
+  depends_on = [time_sleep.wait_project_init]
+}
